@@ -30,9 +30,8 @@ void find(const boost::filesystem::path &root, bool report_files, bool report_di
         // Process entries: print all, push directories to stack relative to current path
 
         const path p = root / relative_path;
-        context.list_directory(p.string(), entries);
 
-        for (const auto &entry : entries)
+        for (const auto &entry : context.list_directory(p.string()))
         {
             if ((gfal2::is_file(entry.status) and report_files) or (gfal2::is_directory(entry.status) and report_directories))
                 cout << (relative_path / entry.name) << endl;

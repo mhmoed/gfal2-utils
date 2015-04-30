@@ -39,7 +39,7 @@ namespace gfal2
             ~context();
         
             
-            void list_directory(const std::string &url, directory_entries &entries);
+            directory_entries list_directory(const std::string &url);
             
             
             struct stat stat(const std::string &url);

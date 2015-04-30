@@ -43,11 +43,11 @@ namespace gfal2
     }
 
 
-    void context::list_directory(const std::string &url, directory_entries &entries)
+    directory_entries context::list_directory(const std::string &url)
     {
         using namespace boost::filesystem;
 
-        // TODO: RIAA directory
+        directory_entries entries;
 
         DIR* const handle = open_directory(url);
         GError *error = NULL;
@@ -64,6 +64,7 @@ namespace gfal2
         }
 
         close_directory(handle);
+        return entries;
     }
 
 
