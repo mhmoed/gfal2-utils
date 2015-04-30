@@ -3,7 +3,6 @@
 #include <stack>
 
 #include <boost/filesystem.hpp>
-#include <boost/foreach.hpp>
 #include <boost/program_options.hpp>
 
 #include "gfal2.hpp"
@@ -33,7 +32,7 @@ void find(const boost::filesystem::path &root, bool report_files, bool report_di
         const path p = root / relative_path;
         context.list_directory(p.string(), entries);
 
-        BOOST_FOREACH(const gfal2::directory_entry &entry, entries)
+        for (const auto &entry : entries)
         {
             if ((gfal2::is_file(entry.status) and report_files) or (gfal2::is_directory(entry.status) and report_directories))
                 cout << (relative_path / entry.name) << endl;
