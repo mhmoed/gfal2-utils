@@ -2,19 +2,17 @@
 #include <iostream>
 #include <stack>
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 
 #include "gfal2.hpp"
 
 
-void find(const boost::filesystem::path &root, bool report_files, bool report_directories)
+void find(const std::string &root, bool report_files, bool report_directories)
 {
     using namespace std;
-    using namespace boost::filesystem;
+    using gfal2::DIRECTORY_SEPARATOR;
 
-    stack<path> remaining;
-    remaining.push(path(""));
+    stack<string> remaining({""});
 
     // List directories while there are still directories remaining
 
@@ -24,22 +22,22 @@ void find(const boost::filesystem::path &root, bool report_files, bool report_di
     {
         gfal2::directory_entries entries;
     
-        const auto relative_path = remaining.top();
+        const string relative_path = remaining.top();
         remaining.pop();
 
         // Process entries: print all, push directories to stack relative to current path
 
-        const auto p = root / relative_path;
-
-        for (const auto &entry : gfal2::list_directory(context, p.string()))
+        for (const auto &entry : gfal2::list_directory(context, root + DIRECTORY_SEPARATOR + relative_path))
         {
+            const auto path = relative_path + DIRECTORY_SEPARATOR + entry.name;
+
             if ((gfal2::is_file(entry) and report_files) or (gfal2::is_directory(entry) and report_directories))
-                cout << (relative_path / entry.name).string() << endl;
+                cout << path << endl;
 
             // Push to stack for further listing if directory
 
             if (gfal2::is_directory(entry))
-                remaining.push(relative_path / entry.name);
+                remaining.push(path);
         }
     }
 }
@@ -82,7 +80,7 @@ int main(const int argc, char **argv)
 
     try
     {
-        const boost::filesystem::path root(vm["url"].as<string>());
+        const auto root = vm["url"].as<string>();
         if (not vm.count("type"))
             find(root, true, true);
         else

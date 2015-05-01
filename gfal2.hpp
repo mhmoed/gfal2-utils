@@ -12,6 +12,9 @@
 
 namespace gfal2
 {
+    static const char DIRECTORY_SEPARATOR = '/';
+
+
     struct directory_entry
     {
         std::string name;
