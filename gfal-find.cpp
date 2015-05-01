@@ -31,7 +31,7 @@ void find(const boost::filesystem::path &root, bool report_files, bool report_di
 
         const auto p = root / relative_path;
 
-        for (const auto &entry : context.list_directory(p.string()))
+        for (const auto &entry : gfal2::list_directory(context, p.string()))
         {
             if ((gfal2::is_file(entry.status) and report_files) or (gfal2::is_directory(entry.status) and report_directories))
                 cout << (relative_path / entry.name).string() << endl;

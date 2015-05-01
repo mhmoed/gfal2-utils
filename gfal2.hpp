@@ -5,6 +5,8 @@
 #include <string>
 #include <sys/stat.h>
 
+#include <boost/noncopyable.hpp>
+
 #include <gfal_api.h>
 
 
@@ -27,36 +29,52 @@ namespace gfal2
     
     
     bool is_symlink(const struct stat &s);
+
     
-    
-    class context
+    class context:public boost::noncopyable
     {
         public:
             
             context();
             
-                
             ~context();
-        
-            
-            directory_entries list_directory(const std::string &url);
-            
-            
-            struct stat stat(const std::string &url);
+
+            gfal2_context_t &handle();       
         
         private:
-            
+
             gfal2_context_t ctx;
-            
-            
-            void verify_error(const std::string &message, const GError* const error);
-            
-            
-            DIR* open_directory(const std::string &url);
-            
-            
-            void close_directory(DIR* const handle);
+    };
+
+
+    directory_entries list_directory(context &context, const std::string &url);
+
+ 
+    namespace detail
+    {
+        class directory:public boost::noncopyable
+        {
+            public:
+
+                directory(context &_ctx, const std::string &url);
+
+                ~directory();
+
+                DIR &handle();
+
+            private:
+
+                context &ctx;
+
+                DIR *dir_handle;
         };
-}
+
+
+        void verify_error(const std::string &message, const GError* const error);
+
+
+        struct stat stat(context &ctx, const std::string &url);
+    };
+};
 
 #endif

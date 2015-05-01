@@ -33,7 +33,7 @@ namespace gfal2
     {
         GError *error = NULL;
         ctx = gfal2_context_new(&error);
-        verify_error("verify_error creating new context", error);
+        detail::verify_error("verify_error creating new context", error);
     }
 
 
@@ -43,61 +43,75 @@ namespace gfal2
     }
 
 
-    directory_entries context::list_directory(const std::string &url)
+    gfal2_context_t &context::handle()
     {
-        using namespace boost::filesystem;
+        return ctx;
+    }
+
+
+    directory_entries list_directory(context &ctx, const std::string &url)
+    {
+        using boost::filesystem::path;
 
         directory_entries entries;
-
-        DIR* const handle = open_directory(url);
+        detail::directory directory(ctx, url);
+        
         GError *error = NULL;
-
-        struct dirent *ent = gfal2_readdir(ctx, handle, &error);
-        while (ent)
+        while (struct dirent *ent = gfal2_readdir(ctx.handle(), &directory.handle(), &error))
         {
+            detail::verify_error(std::string("error reading directory ") + url, error);
+
             directory_entry entry;
             entry.name = ent -> d_name;
-            entry.status = stat((path(url) / entry.name).string());
+            entry.status = detail::stat(ctx, (path(url) / entry.name).string());
+
             entries.push_back(entry);
+        }        
 
-            ent = gfal2_readdir(ctx, handle, &error);
-        }
-
-        close_directory(handle);
         return entries;
     }
 
 
-    struct stat context::stat(const std::string &url)
+    // Implementation. Don't use directly.
+
+    namespace detail
     {
-        struct stat fstat;
-        GError *error = NULL;
-        gfal2_stat(ctx, url.c_str(), &fstat, &error);
-        verify_error(std::string("error getting stats for URL ") + url, error);
-        return fstat;
-    }
+        directory::directory(context &_ctx, const std::string &url):ctx(_ctx)
+        {
+            GError *error = NULL;
+            dir_handle = gfal2_opendir(ctx.handle(), url.c_str(), &error);
+            verify_error(std::string("error opening directory ") + url, error);
+        }
 
 
-    void context::verify_error(const std::string &message, const GError* const error)
-    {
-        if (error)
-            throw std::runtime_error(message + " (code = " + boost::lexical_cast<std::string>(error -> code) + ", message = " + error -> message + ")");
-    }
-
-    
-    DIR* context::open_directory(const std::string &url)
-    {
-        GError *error = NULL;
-        DIR* handle = gfal2_opendir(ctx, url.c_str(), &error);
-        verify_error(std::string("error opening directory ") + url, error);
-        return handle;
-    }
+        directory::~directory()
+        {
+            GError *error = NULL;
+            gfal2_closedir(ctx.handle(), dir_handle, &error);
+            verify_error("error closing directory", error);
+        }
 
 
-    void context::close_directory(DIR* const handle)
-    {
-        GError *error = NULL;
-        gfal2_closedir(ctx, handle, &error);
-        verify_error("error closing directory", error);
-    }
-}
+        DIR &directory::handle()
+        {
+            return *dir_handle;
+        }
+
+
+        void verify_error(const std::string &message, const GError* const error)
+        {
+            if (error)
+                throw std::runtime_error(message + " (code = " + boost::lexical_cast<std::string>(error -> code) + ", message = " + error -> message + ")");
+        }
+
+
+        struct stat stat(context &ctx, const std::string &url)
+        {
+            struct stat fstat;
+            GError *error = NULL;
+            gfal2_stat(ctx.handle(), url.c_str(), &fstat, &error);
+            verify_error(std::string("error getting stats for URL ") + url, error);
+            return fstat;
+        }
+    };
+};
