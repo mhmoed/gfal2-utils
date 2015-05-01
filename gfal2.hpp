@@ -31,7 +31,7 @@ namespace gfal2
     bool is_symlink(const struct stat &s);
 
     
-    class context:public boost::noncopyable
+    class context:private boost::noncopyable
     {
         public:
             
@@ -52,7 +52,7 @@ namespace gfal2
  
     namespace detail
     {
-        class directory:public boost::noncopyable
+        class directory:private boost::noncopyable
         {
             public:
 
@@ -69,9 +69,7 @@ namespace gfal2
                 DIR *dir_handle;
         };
 
-
         void verify_error(const std::string &message, const GError* const error);
-
 
         struct stat stat(context &ctx, const std::string &url);
     };

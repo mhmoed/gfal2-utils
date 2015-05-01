@@ -29,7 +29,7 @@ namespace gfal2
     }
 
 
-    context::context()
+    context::context():boost::noncopyable()
     {
         GError *error = NULL;
         ctx = gfal2_context_new(&error);
@@ -76,7 +76,7 @@ namespace gfal2
 
     namespace detail
     {
-        directory::directory(context &_ctx, const std::string &url):ctx(_ctx)
+        directory::directory(context &_ctx, const std::string &url):boost::noncopyable(), ctx(_ctx)
         {
             GError *error = NULL;
             dir_handle = gfal2_opendir(ctx.handle(), url.c_str(), &error);
