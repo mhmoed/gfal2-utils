@@ -33,12 +33,12 @@ void find(const boost::filesystem::path &root, bool report_files, bool report_di
 
         for (const auto &entry : gfal2::list_directory(context, p.string()))
         {
-            if ((gfal2::is_file(entry.status) and report_files) or (gfal2::is_directory(entry.status) and report_directories))
+            if ((gfal2::is_file(entry) and report_files) or (gfal2::is_directory(entry) and report_directories))
                 cout << (relative_path / entry.name).string() << endl;
 
             // Push to stack for further listing if directory
 
-            if (gfal2::is_directory(entry.status))
+            if (gfal2::is_directory(entry))
                 remaining.push(relative_path / entry.name);
         }
     }

@@ -22,13 +22,13 @@ namespace gfal2
     typedef std::vector<directory_entry> directory_entries;
     
     
-    bool is_file(const struct stat &s);
+    bool is_file(const struct directory_entry &entry);
     
     
-    bool is_directory(const struct stat &s);
+    bool is_directory(const struct directory_entry &entry);
     
     
-    bool is_symlink(const struct stat &s);
+    bool is_symlink(const struct directory_entry &entry);
 
     
     class context:private boost::noncopyable

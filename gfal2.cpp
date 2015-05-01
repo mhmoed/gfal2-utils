@@ -5,27 +5,21 @@
 
 namespace gfal2
 {
-    // TODO: overload with path
-
-    bool is_file(const struct stat &s)
+    bool is_file(const struct directory_entry &entry)
     {
-        return S_ISREG(s.st_mode);
-    }
-
-    
-    // TODO: overload with path
-    
-    bool is_directory(const struct stat &s)
-    {
-        return S_ISDIR(s.st_mode);
+        return S_ISREG(entry.status.st_mode);
     }
 
 
-    // TODO: overload with path
-    
-    bool is_symlink(const struct stat &s)
+    bool is_directory(const struct directory_entry &entry)
     {
-        return S_ISLNK(s.st_mode);
+        return S_ISDIR(entry.status.st_mode);
+    }
+
+
+    bool is_symlink(const struct directory_entry &entry)
+    {
+        return S_ISLNK(entry.status.st_mode);
     }
 
 
