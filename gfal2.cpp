@@ -108,9 +108,8 @@ namespace gfal2
         struct stat stat(context &ctx, const std::string &url)
         {
             struct stat fstat;
-            GError *error = NULL;
-            gfal2_stat(ctx.handle(), url.c_str(), &fstat, &error);
-            verify_error(std::string("error getting stats for URL ") + url, error);
+            auto function = std::bind(gfal2_stat, ctx.handle(), url.c_str(), &fstat, std::placeholders::_1);
+            checked<void>(function, std::string("error getting stats for URL ") + url);
             return fstat;
         }
     };
