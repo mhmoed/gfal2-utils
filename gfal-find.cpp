@@ -29,7 +29,7 @@ void find(const std::string &root, bool report_files, bool report_directories)
 
         for (const auto &entry : gfal2::list_directory(context, root + DIRECTORY_SEPARATOR + relative_path))
         {
-            const auto path = relative_path + DIRECTORY_SEPARATOR + entry.name;
+            const auto path = relative_path.empty() ? entry.name : relative_path + DIRECTORY_SEPARATOR + entry.name;
 
             if ((gfal2::is_file(entry) and report_files) or (gfal2::is_directory(entry) and report_directories))
                 cout << path << endl;
