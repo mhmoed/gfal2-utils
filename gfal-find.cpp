@@ -6,6 +6,8 @@
 
 #include <boost/program_options.hpp>
 
+#include <fnmatch.h>
+
 #include "gfal2.hpp"
 
 
@@ -32,6 +34,23 @@ struct directory_filter:public display_filter
     {
         return gfal2::is_directory(entry);
     }
+};
+
+
+struct shell_pattern_filter:public display_filter
+{
+    shell_pattern_filter(const std::string &pattern):display_filter(), _pattern(pattern)
+    {
+    }
+
+    virtual bool operator()(const gfal2::directory_entry &entry) const
+    {
+        return fnmatch(_pattern.c_str(), entry.name.c_str(), 0);
+    }
+
+    private:
+
+        const std::string _pattern;
 };
 
 
@@ -82,6 +101,7 @@ int main(const int argc, char **argv)
     description.add_options()
         ("help,h", "show help message")
         ("type", po::value<string>(), "type of file (f or d)")
+        ("name", po::value<string>(), "match basename against shell pattern")
         ("url", po::value<string>(), "URL to search from");
     
     po::positional_options_description p;
@@ -112,6 +132,8 @@ int main(const int argc, char **argv)
 
         vector<unique_ptr<display_filter>> display_filters;
 
+        // Entry type filter
+
         if (vm.count("type"))
         {
             const auto &type = vm["type"].as<string>();
@@ -121,6 +143,14 @@ int main(const int argc, char **argv)
                 display_filters.push_back(move(unique_ptr<file_filter>(new file_filter)));
             else
                 throw invalid_argument(string("unknown entry type: ") + type);
+        }
+
+        // Name filter
+        
+        if (vm.count("name"))
+        {
+            const auto &pattern = vm["name"].as<string>();
+            display_filters.push_back(move(unique_ptr<shell_pattern_filter>(new shell_pattern_filter(pattern))));
         }
 
         find(vm["url"].as<string>(), display_filters);
