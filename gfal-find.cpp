@@ -1,13 +1,41 @@
 #include <stdexcept>
 #include <iostream>
 #include <stack>
+#include <memory>
+#include <algorithm>
 
 #include <boost/program_options.hpp>
 
 #include "gfal2.hpp"
 
 
-void find(const std::string &root, bool report_files, bool report_directories)
+// Display filters
+
+struct display_filter
+{
+    virtual bool operator()(const gfal2::directory_entry &entry) const = 0;
+};
+
+
+struct file_filter:public display_filter
+{
+    virtual bool operator()(const gfal2::directory_entry &entry) const
+    {
+        return gfal2::is_file(entry);
+    }
+};
+
+
+struct directory_filter:public display_filter
+{
+    virtual bool operator()(const gfal2::directory_entry &entry) const
+    {
+        return gfal2::is_directory(entry);
+    }
+};
+
+
+void find(const std::string &root, const std::vector<std::unique_ptr<display_filter>> &display_filters)
 {
     using namespace std;
     using gfal2::DIRECTORY_SEPARATOR;
@@ -31,7 +59,7 @@ void find(const std::string &root, bool report_files, bool report_directories)
         {
             const auto path = relative_path.empty() ? entry.name : relative_path + DIRECTORY_SEPARATOR + entry.name;
 
-            if ((gfal2::is_file(entry) and report_files) or (gfal2::is_directory(entry) and report_directories))
+            if (none_of(display_filters.cbegin(), display_filters.cend(), [&entry](auto &filter){ return (*filter)(entry); }))
                 cout << path << endl;
 
             // Push to stack for further listing if directory
@@ -80,19 +108,22 @@ int main(const int argc, char **argv)
 
     try
     {
-        const auto root = vm["url"].as<string>();
-        if (not vm.count("type"))
-            find(root, true, true);
-        else
+        // Set up display filters
+
+        vector<unique_ptr<display_filter>> display_filters;
+
+        if (vm.count("type"))
         {
             const auto &type = vm["type"].as<string>();
             if (type == "f")
-                find(root, true, false);
+                display_filters.push_back(move(unique_ptr<directory_filter>(new directory_filter)));
             else if (type == "d")
-                find(root, false, true);
+                display_filters.push_back(move(unique_ptr<file_filter>(new file_filter)));
             else
-                throw invalid_argument(string("unknown type: ") + type);
+                throw invalid_argument(string("unknown entry type: ") + type);
         }
+
+        find(vm["url"].as<string>(), display_filters);
     }
     catch (const std::exception &exception)
     {
