@@ -1,6 +1,5 @@
 #include "gfal2.hpp"
 
-#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
 
@@ -48,8 +47,6 @@ namespace gfal2
 
     directory_entries list_directory(context &ctx, const std::string &url)
     {
-        using boost::filesystem::path;
-
         directory_entries entries;
         directory directory(ctx, url);
         
@@ -60,7 +57,7 @@ namespace gfal2
 
             directory_entry entry;
             entry.name = ent -> d_name;
-            entry.status = stat(ctx, (path(url) / entry.name).string());
+            entry.status = stat(ctx, url + DIRECTORY_SEPARATOR + entry.name);
 
             entries.push_back(entry);
         }        
