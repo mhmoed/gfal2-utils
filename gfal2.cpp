@@ -1,4 +1,5 @@
 #include "gfal2.hpp"
+
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
@@ -6,6 +7,7 @@
 namespace gfal2
 {
     using namespace detail;
+
 
     bool is_file(const struct directory_entry &entry)
     {
@@ -27,9 +29,8 @@ namespace gfal2
 
     context::context():boost::noncopyable()
     {
-        GError *error = NULL;
-        ctx = gfal2_context_new(&error);
-        verify_error("verify_error creating new context", error);
+        auto function = std::bind(gfal2_context_new, std::placeholders::_1);
+        ctx = checked<gfal2_context_t>(function, "verify_error creating new context");
     }
 
 
@@ -74,17 +75,15 @@ namespace gfal2
     {
         directory::directory(context &_ctx, const std::string &url):boost::noncopyable(), ctx(_ctx)
         {
-            GError *error = NULL;
-            dir_handle = gfal2_opendir(ctx.handle(), url.c_str(), &error);
-            verify_error(std::string("error opening directory ") + url, error);
+            auto function = std::bind(gfal2_opendir, ctx.handle(), url.c_str(), std::placeholders::_1);
+            dir_handle = checked<DIR*>(function, "error opening directory");
         }
 
 
         directory::~directory()
         {
-            GError *error = NULL;
-            gfal2_closedir(ctx.handle(), dir_handle, &error);
-            verify_error("error closing directory", error);
+            auto function = std::bind(gfal2_closedir, ctx.handle(), dir_handle, std::placeholders::_1);
+            checked<void>(function, "error closing directory");
         }
 
 
@@ -99,6 +98,15 @@ namespace gfal2
             if (error)
                 throw std::runtime_error(message + " (code = " + boost::lexical_cast<std::string>(error -> code) + ", message = " + error -> message + ")");
         }
+
+
+        template<> void checked<void>(std::function<void(GError**)> function, const std::string &message)
+        {
+            GError *error = NULL;
+            function(&error);
+            verify_error(message, error);
+        }
+
 
 
         struct stat stat(context &ctx, const std::string &url)
