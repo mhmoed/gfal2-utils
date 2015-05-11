@@ -29,7 +29,7 @@ namespace gfal2
     context::context():boost::noncopyable()
     {
         auto function = std::bind(gfal2_context_new, std::placeholders::_1);
-        ctx = checked<gfal2_context_t>(function, "verify_error creating new context");
+        ctx = checked<gfal2_context_t>(function, "error creating new context");
     }
 
 
