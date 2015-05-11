@@ -5,6 +5,8 @@
 
 namespace gfal2
 {
+    using namespace detail;
+
     bool is_file(const struct directory_entry &entry)
     {
         return S_ISREG(entry.status.st_mode);
@@ -27,7 +29,7 @@ namespace gfal2
     {
         GError *error = NULL;
         ctx = gfal2_context_new(&error);
-        detail::verify_error("verify_error creating new context", error);
+        verify_error("verify_error creating new context", error);
     }
 
 
@@ -48,16 +50,16 @@ namespace gfal2
         using boost::filesystem::path;
 
         directory_entries entries;
-        detail::directory directory(ctx, url);
+        directory directory(ctx, url);
         
         GError *error = NULL;
         while (struct dirent *ent = gfal2_readdir(ctx.handle(), &directory.handle(), &error))
         {
-            detail::verify_error(std::string("error reading directory ") + url, error);
+            verify_error(std::string("error reading directory ") + url, error);
 
             directory_entry entry;
             entry.name = ent -> d_name;
-            entry.status = detail::stat(ctx, (path(url) / entry.name).string());
+            entry.status = stat(ctx, (path(url) / entry.name).string());
 
             entries.push_back(entry);
         }        
