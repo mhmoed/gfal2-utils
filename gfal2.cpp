@@ -1,10 +1,13 @@
 #include "gfal2.hpp"
-#include <boost/filesystem.hpp>
+
 #include <boost/lexical_cast.hpp>
 
 
 namespace gfal2
 {
+    using namespace detail;
+
+
     bool is_file(const struct directory_entry &entry)
     {
         return S_ISREG(entry.status.st_mode);
@@ -25,9 +28,8 @@ namespace gfal2
 
     context::context():boost::noncopyable()
     {
-        GError *error = NULL;
-        ctx = gfal2_context_new(&error);
-        detail::verify_error("verify_error creating new context", error);
+        auto function = std::bind(gfal2_context_new, std::placeholders::_1);
+        ctx = checked<gfal2_context_t>(function, "error creating new context");
     }
 
 
@@ -45,19 +47,17 @@ namespace gfal2
 
     directory_entries list_directory(context &ctx, const std::string &url)
     {
-        using boost::filesystem::path;
-
         directory_entries entries;
-        detail::directory directory(ctx, url);
+        directory directory(ctx, url);
         
         GError *error = NULL;
         while (struct dirent *ent = gfal2_readdir(ctx.handle(), &directory.handle(), &error))
         {
-            detail::verify_error(std::string("error reading directory ") + url, error);
+            verify_error(std::string("error reading directory ") + url, error);
 
             directory_entry entry;
             entry.name = ent -> d_name;
-            entry.status = detail::stat(ctx, (path(url) / entry.name).string());
+            entry.status = stat(ctx, url + DIRECTORY_SEPARATOR + entry.name);
 
             entries.push_back(entry);
         }        
@@ -72,17 +72,15 @@ namespace gfal2
     {
         directory::directory(context &_ctx, const std::string &url):boost::noncopyable(), ctx(_ctx)
         {
-            GError *error = NULL;
-            dir_handle = gfal2_opendir(ctx.handle(), url.c_str(), &error);
-            verify_error(std::string("error opening directory ") + url, error);
+            auto function = std::bind(gfal2_opendir, ctx.handle(), url.c_str(), std::placeholders::_1);
+            dir_handle = checked<DIR*>(function, "error opening directory");
         }
 
 
         directory::~directory()
         {
-            GError *error = NULL;
-            gfal2_closedir(ctx.handle(), dir_handle, &error);
-            verify_error("error closing directory", error);
+            auto function = std::bind(gfal2_closedir, ctx.handle(), dir_handle, std::placeholders::_1);
+            checked<void>(function, "error closing directory");
         }
 
 
@@ -99,12 +97,19 @@ namespace gfal2
         }
 
 
+        template<> void checked<void>(std::function<void(GError**)> function, const std::string &message)
+        {
+            GError *error = NULL;
+            function(&error);
+            verify_error(message, error);
+        }
+
+
         struct stat stat(context &ctx, const std::string &url)
         {
             struct stat fstat;
-            GError *error = NULL;
-            gfal2_stat(ctx.handle(), url.c_str(), &fstat, &error);
-            verify_error(std::string("error getting stats for URL ") + url, error);
+            auto function = std::bind(gfal2_stat, ctx.handle(), url.c_str(), &fstat, std::placeholders::_1);
+            checked<void>(function, std::string("error getting stats for URL ") + url);
             return fstat;
         }
     };

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <functional>
 #include <sys/stat.h>
 
 #include <boost/noncopyable.hpp>
@@ -72,7 +73,21 @@ namespace gfal2
                 DIR *dir_handle;
         };
 
+
         void verify_error(const std::string &message, const GError* const error);
+
+
+        template <typename R> R checked(std::function<R(GError**)> function, const std::string &message)
+        {
+            GError *error = NULL;
+            const R value = function(&error);
+            verify_error(message, error);
+            return value;
+        }
+
+
+        template<> void checked<void>(std::function<void(GError**)> function, const std::string &message);
+
 
         struct stat stat(context &ctx, const std::string &url);
     };
