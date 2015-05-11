@@ -105,7 +105,6 @@ namespace gfal2
         }
 
 
-
         struct stat stat(context &ctx, const std::string &url)
         {
             struct stat fstat;
