@@ -3,10 +3,10 @@ project(GFAL2)
 
 # Find Boost
 
-set(Boost_USE_STATIC_LIBS OFF) 
-set(Boost_USE_MULTITHREADED ON)  
-set(Boost_USE_STATIC_RUNTIME OFF) 
-find_package(Boost 1.44.0 COMPONENTS program_options)
+set(Boost_USE_STATIC_LIBS ON) 
+set(Boost_USE_MULTITHREADED OFF)  
+set(Boost_USE_STATIC_RUNTIME ON) 
+find_package(Boost 1.58.0 COMPONENTS program_options)
 
 if(NOT Boost_FOUND)
     message(FATAL_ERROR "Boost libraries not found. Please make sure you have Boost version 1.44 or higher installed.")
